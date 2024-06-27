@@ -1,82 +1,71 @@
-require ( './helpers.js' );
-
 const chai = require("chai");
+const fs = require("fs");
+const path = require("path");
+const globalJsdom = require("global-jsdom");
+
 chai.use(require("chai-dom"));
 const { expect } = chai;
 
-describe("<table>", () => {
-  it("exists in the HTML document", () => {
-    // Find the table in the HTML
-    const table = document.querySelector("table");
-    const hint = "The document should have a <table> element";
+const html = fs.readFileSync(path.resolve(__dirname, "..", "index.html"), "utf-8");
 
-    expect(table, hint).to.exist;
+globalJsdom(html);
+
+describe("index.html", () => {
+  describe("valid document structure", () => {
+    it("has a DOCTYPE tag", () => {
+      expect(html).to.contain("<!DOCTYPE html>");
+    });
+
+    it("has opening and closing HTML tags", () => {
+      expect(html).to.contain("<html");
+      expect(html).to.contain("</html>");
+    });
+
+    it("has <head> and <body> tags nested in the <html> tag", () => {
+      expect(html).to.contain("<head>");
+      expect(html).to.contain("</head>");
+      expect(html).to.contain("<body>");
+      expect(html).to.contain("</body>");
+    });
+
+    it("has a language attribute in the <html> tag", () => {
+      const htmlElement = document.querySelector("html");
+      expect(htmlElement).to.have.attribute("lang", "en");
+    });
   });
 
-  it("has five rows", () => {
-    const table = document.querySelector("table");
-    const hint = "Your <table> tag needs five <tr> tags, one for each row";
+  describe("valid table structure", () => {
+    it("has a table element", () => {
+      const table = document.querySelector("table");
+      expect(table).to.exist;
+    });
 
-    expect(table, hint).to.have.descendants("tr").and.have.length(5);
-  });
+    it("has a header row with three headers", () => {
+      const headers = document.querySelectorAll("table thead tr th");
+      expect(headers.length).to.equal(3);
+      expect(headers[0]).to.contain.text("City");
+      expect(headers[1]).to.contain.text("State");
+      expect(headers[2]).to.contain.text("2017 estimate");
+    });
 
-  it("has the correct headers", () => {
-    const table = document.querySelector("table");
-    const hint1 = "The first <tr> should have three <th> elements";
-    expect(table, hint1).to.have.descendants("tr > th").and.have.length(3);
+    it("has four rows of city data", () => {
+      const rows = document.querySelectorAll("table tbody tr");
+      expect(rows.length).to.equal(4); // 4 data rows
 
-    const [header1, header2, header3] = table.querySelectorAll("tr > th");
+      const data = [
+        ["New York", "New York", "8,622,698"],
+        ["Los Angeles", "California", "3,999,759"],
+        ["Chicago", "Illinois", "2,716,450"],
+        ["Houston", "Texas", "2,312,717"]
+      ];
 
-    expect(header1).to.contain.text("City");
-    expect(header2).to.contain.text("State");
-    expect(header3).to.contain.text("2017 estimate");
-  });
-
-  it("has the correct information about New York City", () => {
-    const nyRow = document.querySelectorAll("table tr")[1];
-
-    const hint1 = "Each <tr> after the first should have three <td> elements";
-    expect(nyRow, hint1).to.have.descendants("td").and.have.length(3);
-
-    const [cell1, cell2, cell3] = nyRow.querySelectorAll("td");
-    expect(cell1).to.contain.text("New York");
-    expect(cell2).to.contain.text("New York");
-    expect(cell3).to.contain.text("8,622,698");
-  });
-
-  it("has the correct information about Los Angeles", () => {
-    const laRow = document.querySelectorAll("table tr")[2];
-
-    const hint1 = "Each <tr> after the first should have three <td> elements";
-    expect(laRow, hint1).to.have.descendants("td").and.have.length(3);
-
-    const [cell1, cell2, cell3] = laRow.querySelectorAll("td");
-    expect(cell1).to.contain.text("Los Angeles");
-    expect(cell2).to.contain.text("California");
-    expect(cell3).to.contain.text("3,999,759");
-  });
-
-  it("has the correct information about Chicago", () => {
-    const chicagoRow = document.querySelectorAll("table tr")[3];
-
-    const hint1 = "Each <tr> after the first should have three <td> elements";
-    expect(chicagoRow, hint1).to.have.descendants("td").and.have.length(3);
-
-    const [cell1, cell2, cell3] = chicagoRow.querySelectorAll("td");
-    expect(cell1).to.contain.text("Chicago");
-    expect(cell2).to.contain.text("Illinois");
-    expect(cell3).to.contain.text("2,716,450");
-  });
-
-  it("has the correct information about Houston", () => {
-    const houstonRow = document.querySelectorAll("table tr")[4];
-
-    const hint1 = "Each <tr> after the first should have three <td> elements";
-    expect(houstonRow, hint1).to.have.descendants("td").and.have.length(3);
-
-    const [cell1, cell2, cell3] = houstonRow.querySelectorAll("td");
-    expect(cell1).to.contain.text("Houston");
-    expect(cell2).to.contain.text("Texas");
-    expect(cell3).to.contain.text("2,312,717");
+      data.forEach((cityData, index) => {
+        const cells = rows[index].querySelectorAll("td");
+        expect(cells.length).to.equal(3); // Each row should have 3 cells
+        expect(cells[0]).to.contain.text(cityData[0]);
+        expect(cells[1]).to.contain.text(cityData[1]);
+        expect(cells[2]).to.contain.text(cityData[2]);
+      });
+    });
   });
 });
